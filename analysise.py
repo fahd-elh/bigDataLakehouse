@@ -129,38 +129,38 @@ df = spark.read.format("delta").load(WAREHOUSE_PATH + "/temperature") \
 df = df.withColumn("date", to_date("timestamp"))
 df = df.withColumn("hour", hour("timestamp"))
 
-# === 1. Température moyenne par site et par machine sur la journée ===
-temperature_df = df.filter(col("type") == "temperature")
-temp_moyenne = temperature_df.groupBy("date", "site", "machine") \
-    .agg(avg("value").alias("temperature_moyenne"))
+# # === 1. Température moyenne par site et par machine sur la journée ===
+# temperature_df = df.filter(col("type") == "temperature")
+# temp_moyenne = temperature_df.groupBy("date", "site", "machine") \
+#     .agg(avg("value").alias("temperature_moyenne"))
 
-temp_moyenne.coalesce(1).write.mode("overwrite").option("header", "true") \
-    .csv("data_lake/results/temp_moyenne")
+# temp_moyenne.coalesce(1).write.mode("overwrite").option("header", "true") \
+#     .csv("data_lake/results/temp_moyenne")
 
-# === 2. Nombre total d'alertes critiques par type de capteur ===
-alertes = df.filter(
-    ((col("type") == "temperature") & ((col("value") < 30) | (col("value") > 70))) |
-    ((col("type") == "pressure") & ((col("value") < 98000) | (col("value") > 103000))) |
-    ((col("type") == "vibration") & (col("value") > 7.5))
-)
-alertes_par_type = alertes.groupBy("type").agg(count("*").alias("total_alertes"))
+# # === 2. Nombre total d'alertes critiques par type de capteur ===
+# alertes = df.filter(
+#     ((col("type") == "temperature") & ((col("value") < 30) | (col("value") > 70))) |
+#     ((col("type") == "pressure") & ((col("value") < 98000) | (col("value") > 103000))) |
+#     ((col("type") == "vibration") & (col("value") > 7.5))
+# )
+# alertes_par_type = alertes.groupBy("type").agg(count("*").alias("total_alertes"))
 
-alertes_par_type.coalesce(1).write.mode("overwrite").option("header", "true") \
-    .csv("data_lake/results/alertes")
+# alertes_par_type.coalesce(1).write.mode("overwrite").option("header", "true") \
+#     .csv("data_lake/results/alertes")
 
-# === 3. Top 5 machines avec plus grande variabilité de vibration ===
-vibration_df = df.filter(col("type") == "vibration")
-variabilite = vibration_df.groupBy("machine") \
-    .agg(stddev("value").alias("std_vibration"))
+# # === 3. Top 5 machines avec plus grande variabilité de vibration ===
+# vibration_df = df.filter(col("type") == "vibration")
+# variabilite = vibration_df.groupBy("machine") \
+#     .agg(stddev("value").alias("std_vibration"))
 
-top5_vibr = variabilite.orderBy(col("std_vibration").desc()).limit(5)
+# top5_vibr = variabilite.orderBy(col("std_vibration").desc()).limit(5)
 
-top5_vibr.coalesce(1).write.mode("overwrite").option("header", "true") \
-    .csv("data_lake/results/top5_vibration")
+# top5_vibr.coalesce(1).write.mode("overwrite").option("header", "true") \
+#     .csv("data_lake/results/top5_vibration")
 
 # === 4. Évolution horaire de la pression moyenne par site ===
 pression_df = df.filter(col("type") == "pressure")
-pression_horaire = pression_df.groupBy("date", "hour", "site") \
+pression_horaire = pression_df.groupBy("date", "site") \
     .agg(avg("value").alias("pression_moyenne"))
 
 pression_horaire.coalesce(1).write.mode("overwrite").option("header", "true") \
